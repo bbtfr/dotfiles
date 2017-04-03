@@ -1,5 +1,5 @@
 #!/bin/bash -e
-ZSH_THEME="theo"
+ZSH_THEME="bira"
 ZSH_CUSTOM="~/.oh-my-zsh/custom"
 
 # install zsh
