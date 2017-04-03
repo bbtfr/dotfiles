@@ -881,6 +881,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>DarkThemeHasBlackTitlebar</key>
+	<true/>
 	<key>Default Bookmark Guid</key>
 	<string>05C98F62-FEA6-43ED-9B34-1D7E5852CA1B</string>
 	<key>DimBackgroundWindows</key>
@@ -1125,11 +1127,11 @@
 	<key>NSWindow Frame SessionsPreferences</key>
 	<string>171 149 606 456 0 0 1440 877 </string>
 	<key>NSWindow Frame SharedPreferences</key>
-	<string>343 256 796 473 0 0 1440 877 </string>
+	<string>644 396 770 429 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 0</key>
-	<string>122 229 650 476 0 0 1440 877 </string>
+	<string>347 229 650 476 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 1</key>
-	<string>323 197 650 500 0 0 1440 877 </string>
+	<string>323 215 650 476 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 10</key>
 	<string>428 237 650 476 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 11</key>
@@ -2252,7 +2254,7 @@
 	<key>TabStyle</key>
 	<integer>1</integer>
 	<key>TabViewType</key>
-	<integer>1</integer>
+	<integer>0</integer>
 	<key>TmuxDashboardLimit</key>
 	<integer>5</integer>
 	<key>ToolbeltTools</key>
