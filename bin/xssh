@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+require 'base64'
+require 'yaml'
+
+def connect server, server_info
+  command = "ssh -CAXY #{server_info['username']}@#{server_info['hostname']}"
+
+  system "printf \"\\e]1337;SetBadgeFormat=#{Base64.encode64(server)}\\a\""
+  system "ssh-add -K ~/.ssh/id_rsa"
+  puts "Run command: #{command}"
+  system command
+  system "printf \"\\e]1337;SetBadgeFormat=\\a\""
+end
+
+def mount server, server_info
+  command = "sshfs #{server_info['username']}@#{server_info['hostname']}:#{server_info['remotedir']} #{server_info['mountpoint']} -o auto_cache,reconnect,defer_permissions,noappledouble"
+
+  system "mkdir -p #{server_info['mountpoint']}"
+  puts "Run command: #{command}"
+  system command
+end
+
+def umount server, server_info
+  command = "diskutil unmount force #{server_info['mountpoint']}"
+
+  system "mkdir -p #{server_info['mountpoint']}"
+  puts "Run command: #{command}"
+  system command
+  system "rm -r #{server_info['mountpoint']}"
+
+end
+
+def local_runner server, server_info
+  # ##### sample script on remote side
+  # #!/bin/bash -e
+  # echo LOCAL RUNNER: $(hostname -f) open $(realpath $1)
+  #
+  # ##### ITerm2 trigger config
+  # Rugular Expression: ^LOCAL RUNNER: (.*)$
+  # Action:             Run Command...
+  # Parameters:         /Users/amber/Workspace/MEGVII/memo/ssh.rb local-runner \1
+  #
+
+  runner = ARGV[2]
+  path = ARGV[3]
+
+  unless File.exists? server_info["mountpoint"]
+    mount server, server_info
+  end
+
+  command = "#{runner} #{server_info["mountpoint"]}/#{path}"
+  puts "Run command: #{command}"
+  system command
+end
+
+dotfiles_path = File.dirname(File.dirname(__FILE__))
+action, server = case ARGV.size
+  when 0
+    raise RuntimeError, "Please provide action and server name"
+  when 1
+    ['connect', ARGV[0]]
+  when 2
+    [ARGV[0].gsub('-', '_'), ARGV[1]]
+  end
+
+server_info = YAML.load_file(File.expand_path('.servers.yml', dotfiles_path))[server]
+raise RuntimeError, "Server named `#{server}' not found in .servers.yml" unless server_info
+
+send action, server, server_info
