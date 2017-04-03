@@ -2,6 +2,14 @@
 require 'base64'
 require 'yaml'
 
+# ##### sample .servers.yml
+# your_server_id: # eg: remote-host
+#   username: your_name # eg: theo
+#   hostname: your_server_name # 192.168.1.100
+#   remotedir: remote_dir_you_d_like_to_mount # /home/theo
+#   mountpoint: local_dir_you_d_like_to_mount_to # eg: /mnt/remote-host
+#
+
 def connect server, server_info
   command = "ssh -CAXY #{server_info['username']}@#{server_info['hostname']}"
 
@@ -27,7 +35,6 @@ def umount server, server_info
   puts "Run command: #{command}"
   system command
   system "rm -r #{server_info['mountpoint']}"
-
 end
 
 def local_runner server, server_info
@@ -40,26 +47,41 @@ def local_runner server, server_info
   # Action:             Run Command...
   # Parameters:         /Users/amber/Workspace/MEGVII/memo/ssh.rb local-runner \1
   #
+  require 'pathname'
 
   runner = ARGV[2]
-  path = ARGV[3]
+  path = Pathname.new(ARGV[3])
+  remotedir = Pathname.new(server_info['remotedir'])
+  mountpoint = Pathname.new(server_info['mountpoint'])
 
-  unless File.exists? server_info["mountpoint"]
+  unless File.exists? File.expand_path(mountpoint)
     mount server, server_info
   end
 
-  command = "#{runner} #{server_info["mountpoint"]}/#{path}"
-  puts "Run command: #{command}"
-  system command
+  if path == remotedir || path.fnmatch?(File.join(remotedir, '**'))
+    path = path.relative_path_from(remotedir)
+    command = "#{runner} #{File.join(mountpoint, path)}"
+    puts "Run command: #{command}"
+    system command
+  else
+    raise RuntimeError, "Remote path `#{path}'' is not in remotedir `#{remotedir}'"
+  end
 end
 
 dotfiles_path = File.dirname(File.dirname(__FILE__))
+# Redirect stdout & stderr to log file if no tty present
+unless $stdout.tty? && $stdout.tty?
+  logfile = File.open(File.join(dotfiles_path, 'xssh.log'), 'w')
+  $stdout = logfile
+  $stderr = logfile
+end
+
 action, server = case ARGV.size
   when 0
     raise RuntimeError, "Please provide action and server name"
   when 1
     ['connect', ARGV[0]]
-  when 2
+  else
     [ARGV[0].gsub('-', '_'), ARGV[1]]
   end
 
