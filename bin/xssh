@@ -51,6 +51,16 @@ def local_runner server, server_info
 
   runner = ARGV[2]
   path = Pathname.new(ARGV[3])
+  redirects = server_info['redirects']
+  redirects.each do |rule, redirect|
+    server_info = load_server_info redirect if path.fnmatch?(rule)
+  end if redirects
+
+  rewrites = server_info['rewrites']
+  rewrites.each do |rule, text|
+    path = Pathname.new(path.to_s.gsub(rule, text))
+  end if rewrites
+
   remotedir = Pathname.new(server_info['remotedir'])
   mountpoint = Pathname.new(server_info['mountpoint'])
 
@@ -68,10 +78,18 @@ def local_runner server, server_info
   end
 end
 
-dotfiles_path = File.dirname(File.dirname(__FILE__))
+def load_server_info server
+  yaml_data = YAML.load_file(File.expand_path('.servers.yml', DOTFILES_PATH))
+  server_info = yaml_data[server]
+  return server_info if server_info
+  matcher = yaml_data.find{ |name, info| info['alias'] == server }
+  matcher && matcher.last
+end
+
+DOTFILES_PATH = File.dirname(File.dirname(__FILE__))
 # Redirect stdout & stderr to log file if no tty present
 unless $stdout.tty? && $stdout.tty?
-  logfile = File.open(File.join(dotfiles_path, 'xssh.log'), 'w')
+  logfile = File.open(File.join(DOTFILES_PATH, 'xssh.log'), 'w')
   $stdout = logfile
   $stderr = logfile
 end
@@ -85,7 +103,7 @@ action, server = case ARGV.size
     [ARGV[0].gsub('-', '_'), ARGV[1]]
   end
 
-server_info = YAML.load_file(File.expand_path('.servers.yml', dotfiles_path))[server]
+server_info = load_server_info server
 raise RuntimeError, "Server named `#{server}' not found in .servers.yml" unless server_info
 
 send action, server, server_info
