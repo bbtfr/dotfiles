@@ -5,8 +5,10 @@ local return_code='%(?..%{$fg[red]%}%? %{$reset_color%})'
 local user_host=''
 if [[ $UID -eq 0 ]]; then
   user_host='%{$fg_bold[red]%}%n@%m %{$reset_color%}'
-else
+elif [[ $USER = $ZSH_LOCAL_USER ]]; then
   user_host='%{$fg_bold[green]%}%n@%m %{$reset_color%}'
+else
+  user_host='%{$fg_bold[magenta]%}%n@%m %{$reset_color%}'
 fi
 
 # Current directory.
