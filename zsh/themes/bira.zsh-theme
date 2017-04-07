@@ -43,8 +43,8 @@ fi
 # Git status: collect indicators, git branch and pring string.
 local git_branch='$(git_prompt_info)'
 
-PROMPT=" ${user_host}${current_dir}${ruby_version}${nodejs_version}${git_branch}
- %B$%b "
+PROMPT="┌ ${user_host}${current_dir}${ruby_version}${nodejs_version}${git_branch}
+└ %B$%b "
 RPS1="${return_code}"
 
 ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg[yellow]%}‹"
