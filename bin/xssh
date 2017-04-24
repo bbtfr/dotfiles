@@ -9,9 +9,17 @@ require 'yaml'
 #   remotedir: remote_dir_you_d_like_to_mount # /home/theo
 #   mountpoint: local_dir_you_d_like_to_mount_to # eg: /mnt/remote-host
 #
+def sshpass command, server_info
+  if server_info['password']
+    ENV['SSHPASS'] = server_info['password']
+    command = "sshpass -e #{command}"
+  end
+  command
+end
 
 def connect server, server_info
   command = "ssh -CAXY #{server_info['username']}@#{server_info['hostname']}"
+  command = sshpass command, server_info
 
   system "printf \"\\e]1337;SetBadgeFormat=#{Base64.encode64(server)}\\a\""
   system "ssh-add -K ~/.ssh/id_rsa"
@@ -22,6 +30,7 @@ end
 
 def mount server, server_info
   command = "sshfs #{server_info['username']}@#{server_info['hostname']}:#{server_info['remotedir']} #{server_info['mountpoint']} -o auto_cache,reconnect,defer_permissions,noappledouble"
+  command = sshpass command, server_info
 
   system "mkdir -p #{server_info['mountpoint']}"
   puts "Run command: #{command}"
@@ -35,6 +44,23 @@ def umount server, server_info
   puts "Run command: #{command}"
   system command
   system "rm -r #{server_info['mountpoint']}"
+end
+
+def proxy server, server_info
+  port = server_info['proxy_port'] || 7071
+  command = "ssh -CN #{server_info['username']}@#{server_info['hostname']} -D #{port}"
+  command = sshpass command, server_info
+
+  puts "Run command: #{command}"
+  puts "Listening on localhost:#{port} (Press CTRL+C to quit)"
+
+  loop do
+    system command
+    puts "Rerun command: #{command}"
+    puts "Listening on localhost:#{port} (Press CTRL+C to quit)"
+  end
+
+rescue Interrupt
 end
 
 def local_runner server, server_info
