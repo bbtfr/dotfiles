@@ -17,8 +17,12 @@ def sshpass command, server_info
   command
 end
 
+def server_name server_info
+  "#{server_info['username']}@#{server_info['hostname']}"
+end
+
 def connect server, server_info
-  command = "ssh -CAXY #{server_info['username']}@#{server_info['hostname']}"
+  command = "ssh -CAXY #{server_name server_info}"
   command = "#{command} #{server_info['extra_connect_options']}" if server_info['extra_connect_options']
   command = sshpass command, server_info
 
@@ -30,7 +34,7 @@ def connect server, server_info
 end
 
 def mount server, server_info
-  command = "sshfs #{server_info['username']}@#{server_info['hostname']}:#{server_info['remotedir']} #{server_info['mountpoint']} -o auto_cache,reconnect,defer_permissions,noappledouble"
+  command = "sshfs #{server_name server_info}:#{server_info['remotedir']} #{server_info['mountpoint']} -o auto_cache,reconnect,defer_permissions,noappledouble"
   command = sshpass command, server_info
 
   system "mkdir -p #{server_info['mountpoint']}"
@@ -49,7 +53,7 @@ end
 
 def proxy server, server_info
   port = server_info['proxy_port'] || 7071
-  command = "ssh -CN #{server_info['username']}@#{server_info['hostname']} -D #{port}"
+  command = "ssh -CN #{server_name server_info} -D #{port}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"
@@ -63,24 +67,28 @@ def proxy server, server_info
 rescue Interrupt
 end
 
-def copy_from server, server_info
+def pull server, server_info
   from = ARGV[2]
   to = ARGV[3]
-  command = "scp #{server_info['username']}@#{server_info['hostname']}:#{from} #{to}"
+  command = "scp #{server_name server_info}:#{from} #{to}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"
   system command
 end
 
-def copy_to server, server_info
+def push server, server_info
   from = ARGV[2]
   to = ARGV[3]
-  command = "scp #{from} #{server_info['username']}@#{server_info['hostname']}:#{to}"
+  command = "scp #{from} #{server_name server_info}:#{to}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"
   system command
+end
+
+def info server, server_info
+  puts "#{server_name server_info}"
 end
 
 def local_runner server, server_info
@@ -144,7 +152,7 @@ action, server = case ARGV.size
   when 0
     raise RuntimeError, "Please provide action and server name"
   when 1
-    ['connect', ARGV[0]]
+    ['info', ARGV[0]]
   else
     [ARGV[0].gsub('-', '_'), ARGV[1]]
   end
