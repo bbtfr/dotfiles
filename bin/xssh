@@ -19,6 +19,7 @@ end
 
 def connect server, server_info
   command = "ssh -CAXY #{server_info['username']}@#{server_info['hostname']}"
+  command = "#{command} #{server_info['extra_connect_options']}" if server_info['extra_connect_options']
   command = sshpass command, server_info
 
   system "printf \"\\e]1337;SetBadgeFormat=#{Base64.encode64(server)}\\a\""
@@ -59,8 +60,27 @@ def proxy server, server_info
     puts "Rerun command: #{command}"
     puts "Listening on localhost:#{port} (Press CTRL+C to quit)"
   end
-
 rescue Interrupt
+end
+
+def copy_from server, server_info
+  from = ARGV[2]
+  to = ARGV[3]
+  command = "scp #{server_info['username']}@#{server_info['hostname']}:#{from} #{to}"
+  command = sshpass command, server_info
+
+  puts "Run command: #{command}"
+  system command
+end
+
+def copy_to server, server_info
+  from = ARGV[2]
+  to = ARGV[3]
+  command = "scp #{from} #{server_info['username']}@#{server_info['hostname']}:#{to}"
+  command = sshpass command, server_info
+
+  puts "Run command: #{command}"
+  system command
 end
 
 def local_runner server, server_info
