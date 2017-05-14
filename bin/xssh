@@ -26,6 +26,9 @@ def connect server, server_info
   command = "#{command} #{server_info['extra_connect_options']}" if server_info['extra_connect_options']
   command = sshpass command, server_info
 
+  ENV['LANG'] = "zh_CN.UTF-8"
+  ENV['LC_ALL'] = "zh_CN.UTF-8"
+
   system "printf \"\\e]1337;SetBadgeFormat=#{Base64.encode64(server)}\\a\""
   system "ssh-add -K ~/.ssh/id_rsa"
   puts "Run command: #{command}"
@@ -48,7 +51,11 @@ def umount server, server_info
   system "mkdir -p #{server_info['mountpoint']}"
   puts "Run command: #{command}"
   system command
-  system "rm -r #{server_info['mountpoint']}"
+
+  if `mount | grep -e "on \`realpath #{server_info['mountpoint']}\`"` == ''
+    # remove the folder only if umount successfully
+    system "rm -r #{server_info['mountpoint']}"
+  end
 end
 
 def proxy server, server_info
