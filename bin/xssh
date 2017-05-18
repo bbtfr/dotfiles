@@ -17,13 +17,19 @@ def sshpass command, server_info
   command
 end
 
+def extra_options command, options
+  command = "#{command} #{options}" if options
+  command
+end
+
+
 def server_name server_info
   "#{server_info['username']}@#{server_info['hostname']}"
 end
 
 def connect server, server_info
   command = "ssh -CAXY #{server_name server_info}"
-  command = "#{command} #{server_info['extra_connect_options']}" if server_info['extra_connect_options']
+  command = extra_options command, server_info['extra_connect_options']
   command = sshpass command, server_info
 
   ENV['LANG'] = "zh_CN.UTF-8"
@@ -36,8 +42,20 @@ def connect server, server_info
   system "printf \"\\e]1337;SetBadgeFormat=\\a\""
 end
 
+def shell server, server_info
+  subcommand = ARGV[2..-1].join(" ")
+  command = "ssh -C #{server_name server_info}"
+  command = extra_options command, server_info['extra_connect_options']
+  command = sshpass command, server_info
+  command = "#{command} #{subcommand}"
+
+  puts "Run command: #{command}"
+  system command
+end
+
 def mount server, server_info
   command = "sshfs #{server_name server_info}:#{server_info['remotedir']} #{server_info['mountpoint']} -o auto_cache,reconnect,defer_permissions,noappledouble"
+  command = extra_options command, server_info['extra_mount_options']
   command = sshpass command, server_info
 
   system "mkdir -p #{server_info['mountpoint']}"
