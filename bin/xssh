@@ -95,7 +95,7 @@ end
 def pull server, server_info
   from = ARGV[2]
   to = ARGV[3]
-  command = "scp #{server_name server_info}:#{from} #{to}"
+  command = "scp -r #{server_name server_info}:#{from} #{to}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"
@@ -105,7 +105,15 @@ end
 def push server, server_info
   from = ARGV[2]
   to = ARGV[3]
-  command = "scp #{from} #{server_name server_info}:#{to}"
+  command = "scp -r #{from} #{server_name server_info}:#{to}"
+  command = sshpass command, server_info
+
+  puts "Run command: #{command}"
+  system command
+end
+
+def copyid server, server_info
+  command = "ssh-copy-id #{server_name server_info}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"

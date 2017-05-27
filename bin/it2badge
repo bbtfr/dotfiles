@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Set badge to show the current session name and git branch, if any is set.
+printf "\e]1337;SetBadgeFormat=%s\a" $(echo -n "$@" | base64)
