@@ -78,8 +78,8 @@ end
 alias unmount umount
 
 def remount server, server_info
-  mount server, server_info
   umount server, server_info
+  mount server, server_info
 end
 
 def proxy server, server_info
