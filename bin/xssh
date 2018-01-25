@@ -70,10 +70,16 @@ def umount server, server_info
   puts "Run command: #{command}"
   system command
 
-  if `mount | grep -e "on \`realpath #{server_info['mountpoint']}\`"` == ''
+  if `mount | grep -e "on #{File.absolute_path server_info['mountpoint']}"` == ''
     # remove the folder only if umount successfully
     system "rm -r #{server_info['mountpoint']}"
   end
+end
+alias unmount umount
+
+def remount server, server_info
+  mount server, server_info
+  umount server, server_info
 end
 
 def proxy server, server_info
