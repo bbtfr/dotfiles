@@ -82,6 +82,15 @@ def remount server, server_info
   mount server, server_info
 end
 
+def unmount server, server_info
+  umount server, server_info
+end
+
+def remount server, server_info
+  umount server, server_info
+  mount server, server_info
+end
+
 def proxy server, server_info
   port = server_info['proxy_port'] || 7071
   command = "ssh -CN #{server_name server_info} -D #{port}"
@@ -101,7 +110,8 @@ end
 def pull server, server_info
   from = ARGV[2]
   to = ARGV[3]
-  command = "scp -r #{server_name server_info}:#{from} #{to}"
+  # command = "scp -r #{server_name server_info}:#{from} #{to}"
+  command = "rsync -Pav #{server_name server_info}:#{from} #{to}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"
@@ -111,7 +121,8 @@ end
 def push server, server_info
   from = ARGV[2]
   to = ARGV[3]
-  command = "scp -r #{from} #{server_name server_info}:#{to}"
+  # command = "scp -r #{from} #{server_name server_info}:#{to}"
+  command = "rsync -Pav #{from} #{server_name server_info}:#{to}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"

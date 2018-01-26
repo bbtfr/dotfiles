@@ -14,6 +14,8 @@
 	<integer>0</integer>
 	<key>AppleSmoothFixedFontsSizeThreshold</key>
 	<integer>1</integer>
+	<key>AppleWindowTabbingMode</key>
+	<string>manual</string>
 	<key>AutoCommandHistory</key>
 	<false/>
 	<key>AutoHideTmuxClientSession</key>
@@ -2614,7 +2616,7 @@
 		</dict>
 	</dict>
 	<key>DarkThemeHasBlackTitlebar</key>
-	<false/>
+	<true/>
 	<key>Default Bookmark Guid</key>
 	<string>05C98F62-FEA6-43ED-9B34-1D7E5852CA1B</string>
 	<key>Default Toolbelt Width</key>
@@ -2633,6 +2635,8 @@
 	<true/>
 	<key>DoubleReportScrollWheel</key>
 	<false/>
+	<key>EliminateCloseButtons</key>
+	<true/>
 	<key>EnableDivisionView</key>
 	<false/>
 	<key>FlashTabBarInFullscreen</key>
@@ -2796,7 +2800,7 @@
 	<key>HideTab</key>
 	<true/>
 	<key>HideTabCloseButton</key>
-	<false/>
+	<true/>
 	<key>HideTabNumber</key>
 	<false/>
 	<key>HotkeyMigratedFromSingleToMulti</key>
@@ -2816,7 +2820,7 @@
 	<key>NSFontPanelAttributes</key>
 	<string>1, 1</string>
 	<key>NSNavLastRootDirectory</key>
-	<string>~/Workspace/OTHERS/iTerm2-Color-Schemes/schemes</string>
+	<string>~/Documents</string>
 	<key>NSNavPanelExpandedSizeForOpenMode</key>
 	<string>{712, 459}</string>
 	<key>NSNavPanelExpandedSizeForSaveMode</key>
@@ -2838,7 +2842,7 @@
 	gAKACoAN0xAJChEVGVdOUy5rZXlzoxITFIADgASABaMWFxiABoAHgAiACVpJZGVudGlm
 	aWVyVVdpZHRoVkhpZGRlblEwI0BowAAAAAAACNIhIiMkWiRjbGFzc25hbWVYJGNsYXNz
 	ZXNcTlNEaWN0aW9uYXJ5oiMlWE5TT2JqZWN00xAJCicrGaMSExSAA4AEgAWjLC0YgAuA
-	DIAIgAlRMSNAdCAAAAAAANIhIjM0Xk5TTXV0YWJsZUFycmF5ozM1JVdOU0FycmF5XxAP
+	DIAIgAlRMSNAdKAAAAAAANIhIjM0Xk5TTXV0YWJsZUFycmF5ozM1JVdOU0FycmF5XxAP
 	TlNLZXllZEFyY2hpdmVy0Tg5VUFycmF5gAEACAARABoAIwAtADIANwBGAEwAUQBcAGMA
 	ZgBoAGoAbABzAHsAfwCBAIMAhQCJAIsAjQCPAJEAnACiAKkAqwC0ALUAugDFAM4A2wDe
 	AOcA7gDyAPQA9gD4APwA/gEAAQIBBAEGAQ8BFAEjAScBLwFBAUQBSgAAAAAAAAIBAAAA
@@ -2862,7 +2866,7 @@
 	<key>NSWindow Frame NSColorPanel</key>
 	<string>850 278 228 349 0 0 1440 877 </string>
 	<key>NSWindow Frame NSFontPanel</key>
-	<string>393 382 732 291 0 0 1440 877 </string>
+	<string>643 414 732 157 0 0 1440 877 </string>
 	<key>NSWindow Frame Preferences</key>
 	<string>269 400 606 456 0 0 1440 877 </string>
 	<key>NSWindow Frame SUStatusFrame</key>
@@ -2872,13 +2876,13 @@
 	<key>NSWindow Frame SessionsPreferences</key>
 	<string>171 149 606 469 0 0 1440 877 </string>
 	<key>NSWindow Frame SharedPreferences</key>
-	<string>289 420 916 416 0 0 1440 877 </string>
+	<string>364 265 770 429 0 0 1440 877 </string>
 	<key>NSWindow Frame UKCrashReporter</key>
 	<string>99 293 592 584 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 0</key>
-	<string>91 358 1162 476 0 0 1440 877 </string>
+	<string>0 28 1437 848 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 1</key>
-	<string>536 96 650 476 0 0 1440 877 </string>
+	<string>11 348 1058 426 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 10</key>
 	<string>428 237 650 476 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 11</key>
@@ -2896,17 +2900,17 @@
 	<key>NSWindow Frame iTerm Window 17</key>
 	<string>722 319 650 476 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 2</key>
-	<string>432 131 650 476 0 0 1440 877 </string>
+	<string>51 79 1370 762 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 3</key>
-	<string>91 70 1186 770 0 0 1440 877 </string>
+	<string>642 248 650 426 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 4</key>
-	<string>185 339 650 476 0 0 1440 877 </string>
+	<string>37 388 650 426 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 5</key>
-	<string>233 223 650 476 0 0 1440 877 </string>
+	<string>88 367 650 426 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 6</key>
-	<string>416 180 650 476 0 0 1440 877 </string>
+	<string>416 228 650 426 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 7</key>
-	<string>384 63 650 476 0 0 1440 877 </string>
+	<string>384 111 650 426 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 8</key>
 	<string>502 87 650 476 0 0 1440 877 </string>
 	<key>NSWindow Frame iTerm Window 9</key>
@@ -3212,7 +3216,7 @@
 			<key>Non-ASCII Anti Aliased</key>
 			<true/>
 			<key>Normal Font</key>
-			<string>UbuntuMono-Regular 16</string>
+			<string>UbuntuMonoDerivativePowerline-Regular 16</string>
 			<key>Option Key Sends</key>
 			<integer>2</integer>
 			<key>Prompt Before Closing 2</key>
@@ -3380,7 +3384,7 @@
 			<key>Use Tab Color</key>
 			<false/>
 			<key>Vertical Spacing</key>
-			<real>1.1000000000000001</real>
+			<real>1</real>
 			<key>Visual Bell</key>
 			<true/>
 			<key>Window Type</key>
@@ -3695,7 +3699,7 @@
 			<key>Non-ASCII Anti Aliased</key>
 			<true/>
 			<key>Normal Font</key>
-			<string>UbuntuMono-Regular 16</string>
+			<string>UbuntuMonoDerivativePowerline-Regular 16</string>
 			<key>Option Key Sends</key>
 			<integer>2</integer>
 			<key>Prompt Before Closing 2</key>
@@ -3872,7 +3876,7 @@
 			<key>Use Tab Color</key>
 			<false/>
 			<key>Vertical Spacing</key>
-			<real>1.1000000238418579</real>
+			<real>1</real>
 			<key>Visual Bell</key>
 			<true/>
 			<key>Window Type</key>
@@ -3995,7 +3999,7 @@
 	<key>SUHasLaunchedBefore</key>
 	<true/>
 	<key>SULastCheckTime</key>
-	<date>2017-05-26T00:55:05Z</date>
+	<date>2017-11-23T12:50:25Z</date>
 	<key>SUSendProfileInfo</key>
 	<false/>
 	<key>ShowBookmarkName</key>
@@ -4009,13 +4013,13 @@
 	<key>SmartPlacement</key>
 	<false/>
 	<key>SplitPaneDimmingAmount</key>
-	<real>0.59999999999999998</real>
+	<real>0.33626552483974359</real>
 	<key>StretchTabsToFillBar</key>
 	<false/>
 	<key>SwitchPaneModifier</key>
 	<integer>5</integer>
 	<key>TabStyle</key>
-	<integer>1</integer>
+	<integer>0</integer>
 	<key>TabViewType</key>
 	<integer>0</integer>
 	<key>TerminalMargin</key>
@@ -4034,7 +4038,7 @@
 	<key>TripleClickSelectsFullWrappedLines</key>
 	<true/>
 	<key>UKCrashReporterLastCrashReportDate</key>
-	<real>1495676672</real>
+	<real>1508932864</real>
 	<key>URLHandlersByGuid</key>
 	<dict/>
 	<key>Use background pattern indicator</key>
@@ -4044,7 +4048,7 @@
 	<key>UseLionStyleFullscreen</key>
 	<true/>
 	<key>WindowNumber</key>
-	<false/>
+	<true/>
 	<key>WordCharacters</key>
 	<string>/-+\~_.</string>
 	<key>findIgnoreCase_iTerm</key>
@@ -4054,7 +4058,7 @@
 	<key>findRegex_iTerm</key>
 	<false/>
 	<key>iTerm Version</key>
-	<string>3.1.beta.2</string>
+	<string>3.1.5.beta.2</string>
 	<key>kCPKSelectionViewPreferredModeKey</key>
 	<integer>0</integer>
 	<key>kCPKSelectionViewShowHSBTextFieldsKey</key>
