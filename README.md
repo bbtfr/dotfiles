@@ -1,7 +1,7 @@
 xssh
 ===
 
-![screencast][xssh-demo.gif]
+![screencast](xssh-demo.gif)
 
 Installation
 ---
