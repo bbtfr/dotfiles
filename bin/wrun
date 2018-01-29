@@ -1,15 +1,9 @@
-#!/usr/bin/env ruby
+#!/bin/bash
 
-require 'optparse'
+while true
+do
+  eval $@
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = "Usage: example.rb [options]"
-
-  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-    options[:verbose] = v
-  end
-end.parse!
-
-p options
-p ARGV
+  echo "Retry in 3 seconds..."
+  sleep 3
+done
