@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+import os, sys, json, subprocess
+from http.client import HTTPSConnection
+from traceback import print_exc
+from datetime import datetime, timedelta
+
+ERROR_TITLE = "脚本 {script} 执行过程中出错"
+DONE_TITLE = "脚本 {script} 执行完成"
+ERROR_MESSAGE_TITLE = "你的锅炸了: 脚本执行过程中出错"
+DONE_MESSAGE_TITLE = "你的锅修好了: 脚本执行完成"
+MESSAGE = """
+### {message_title}
+```
+谁的锅: {owner}
+什么锅: {script}
+锅在哪: {cwd}
+修了多久: {cost}
+{message}
+```
+"""
+
+TIMEDELTA = timedelta(minutes=10)
+ACCESS_TOKEN = '5cd53bd056e7fcb6eb281b1273cf68b88dacbcd7c4dc068f5ca92f0c1740daf2'
+REQUEST_HOST = 'oapi.dingtalk.com'
+REQUEST_URL = '/robot/send?access_token=%s' % ACCESS_TOKEN
+
+def send_ding_message(data):
+    try:
+        conn = HTTPSConnection(REQUEST_HOST)
+        conn.request('POST', REQUEST_URL, json.dumps(data), { 'Content-Type': 'application/json' })
+        response = conn.getresponse()
+        ret = json.loads(response.read())
+        assert ret['errcode'] == 0, ret['errmsg']
+    except Exception:
+        print_exc()
+
+def send_markdown_message(message, title='markdown'):
+    send_ding_message({
+        'msgtype': 'markdown',
+        'markdown': {
+            'title': title,
+            'text': message,
+        },
+        'at': {
+            'isAtAll': False
+        }
+    })
+
+command = ' '.join(sys.argv[1:])
+start = datetime.now()
+
+def send_message(title, message_title):
+    cost = datetime.now() - start
+    if cost < TIMEDELTA:
+        return
+
+    title = title.format(script=command)
+    message = MESSAGE.format(
+        title=title,
+        message_title=message_title,
+        script=command,
+        owner=os.getlogin(),
+        cwd=os.getcwd(),
+        cost=cost,
+        message='',
+        )
+    send_markdown_message(message, title)
+
+try:
+    subprocess.check_call(command, shell=True)
+    send_message(DONE_TITLE, DONE_MESSAGE_TITLE)
+except subprocess.CalledProcessError as error:
+    send_message(ERROR_TITLE, ERROR_MESSAGE_TITLE)
+    exit(error.returncode)
