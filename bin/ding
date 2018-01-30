@@ -7,14 +7,14 @@ from datetime import datetime, timedelta
 ERROR_TITLE = "脚本 {script} 执行过程中出错"
 DONE_TITLE = "脚本 {script} 执行完成"
 ERROR_MESSAGE_TITLE = "你的锅炸了: 脚本执行过程中出错"
-DONE_MESSAGE_TITLE = "你的锅修好了: 脚本执行完成"
+DONE_MESSAGE_TITLE = "你的锅补好了: 脚本执行完成"
 MESSAGE = """
 ### {message_title}
 ```
 谁的锅: {owner}
 什么锅: {script}
 锅在哪: {cwd}
-修了多久: {cost}
+补了多久: {cost}
 {message}
 ```
 """
