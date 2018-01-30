@@ -108,8 +108,8 @@ rescue Interrupt
 end
 
 def pull server, server_info
-  from = ARGV[2]
-  to = ARGV[3]
+  from = ARGV[2..-2].join(' ')
+  to = ARGV.last
   # command = "scp -r #{server_name server_info}:#{from} #{to}"
   command = "rsync -Pav #{server_name server_info}:#{from} #{to}"
   command = sshpass command, server_info
@@ -119,8 +119,8 @@ def pull server, server_info
 end
 
 def push server, server_info
-  from = ARGV[2]
-  to = ARGV[3]
+  from = ARGV[2..-2].join(' ')
+  to = ARGV.last
   # command = "scp -r #{from} #{server_name server_info}:#{to}"
   command = "rsync -Pav #{from} #{server_name server_info}:#{to}"
   command = sshpass command, server_info
