@@ -176,10 +176,17 @@ def local_runner server, server_info
     path = path.relative_path_from(remotedir)
     command = "#{runner} #{File.join(mountpoint, path)}"
     puts "Run command: #{command}"
-    system command
+    result = `#{command} 2>&1`
+    show_message "RunCommand", "$ #{command}\n#{result}"
   else
     raise RuntimeError, "Remote path `#{path}'' is not in remotedir `#{remotedir}'"
   end
+end
+
+def show_message title, message
+  title = title.to_s.gsub("'", "\\'")
+  message = message.to_s.gsub("'", "\\'")
+  system "osascript -e 'display notification \"#{message}\" with title \"#{title}\"'"
 end
 
 def load_server_info server
@@ -207,7 +214,13 @@ action, server = case ARGV.size
     [ARGV[0].gsub('-', '_'), ARGV[1]]
   end
 
-server_info = load_server_info server
-raise RuntimeError, "Server named `#{server}' not found in .servers.yml" unless server_info
+begin
+  server_info = load_server_info server
+  raise RuntimeError, "Server named `#{server}' not found in .servers.yml" unless server_info
+  send action, server, server_info
 
-send action, server, server_info
+rescue Exception => error
+  if action == 'local_runner'
+    show_message error.class, error
+  end
+end
