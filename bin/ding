@@ -10,13 +10,11 @@ ERROR_MESSAGE_TITLE = "你的锅炸了: 脚本执行过程中出错"
 DONE_MESSAGE_TITLE = "你的锅补好了: 脚本执行完成"
 MESSAGE = """
 ### {message_title}
-```
-谁的锅: {owner}
-什么锅: {script}
-锅在哪: {cwd}
-补了多久: {cost}
-{message}
-```
+
+> 谁的锅: {owner}
+> 什么锅: {script}
+> 锅在哪: {cwd}
+> 补了多久: {cost}
 """
 
 TIMEDELTA = timedelta(minutes=10)
@@ -62,7 +60,6 @@ def send_message(title, message_title):
         owner=os.getlogin(),
         cwd=os.getcwd(),
         cost=cost,
-        message='',
         )
     send_markdown_message(message, title)
 

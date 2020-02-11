@@ -111,7 +111,7 @@ def pull server, server_info
   from = ARGV[2..-2].join(' ')
   to = ARGV.last
   # command = "scp -r #{server_name server_info}:#{from} #{to}"
-  command = "rsync -Pav #{server_name server_info}:#{from} #{to}"
+  command = "rsync -Pavz --inplace --append #{server_name server_info}:#{from} #{to}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"
@@ -122,7 +122,7 @@ def push server, server_info
   from = ARGV[2..-2].join(' ')
   to = ARGV.last
   # command = "scp -r #{from} #{server_name server_info}:#{to}"
-  command = "rsync -Pav #{from} #{server_name server_info}:#{to}"
+  command = "rsync -Pavz --inplace --append #{from} #{server_name server_info}:#{to}"
   command = sshpass command, server_info
 
   puts "Run command: #{command}"
@@ -139,6 +139,15 @@ end
 
 def info server, server_info
   puts "#{server_name server_info}"
+end
+
+def bind server, server_info
+  from = ARGV[2]
+  to = ARGV[3] || from
+  command = "autossh -M 0 -NL 0.0.0.0:#{from}:127.0.0.1:#{to} #{server_name server_info}"
+
+  puts "Run command: #{command}"
+  system command
 end
 
 def local_runner server, server_info
@@ -193,7 +202,9 @@ def load_server_info server
   yaml_data = YAML.load_file(File.expand_path('.servers.yml', DOTFILES_PATH))
   server_info = yaml_data[server]
   return server_info if server_info
-  matcher = yaml_data.find{ |name, info| info['alias'] == server }
+  matcher = yaml_data.find do |name, info|
+    Array(info['alias']).include? server
+  end
   matcher && matcher.last
 end
 
