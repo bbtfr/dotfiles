@@ -2,7 +2,7 @@
 require 'base64'
 require 'yaml'
 
-# ##### sample .servers.yml
+# ##### sample servers.yml
 # your_server_id: # eg: remote-host
 #   username: your_name # eg: theo
 #   hostname: your_server_name # 192.168.1.100
@@ -158,7 +158,7 @@ def local_runner server, server_info
   # ##### ITerm2 trigger config
   # Rugular Expression: ^LOCAL RUNNER: (.*)$
   # Action:             Run Command...
-  # Parameters:         /Users/amber/Workspace/MEGVII/memo/ssh.rb local-runner \1
+  # Parameters:         ~/.dotfiles/xssh local-runner \1
   #
   require 'pathname'
 
@@ -199,7 +199,7 @@ def show_message title, message
 end
 
 def load_server_info server
-  yaml_data = YAML.load_file(File.expand_path('.servers.yml', DOTFILES_PATH))
+  yaml_data = YAML.load_file(File.expand_path('servers.yml', DOTFILES_PATH))
   server_info = yaml_data[server]
   return server_info if server_info
   matcher = yaml_data.find do |name, info|
@@ -227,7 +227,7 @@ action, server = case ARGV.size
 
 begin
   server_info = load_server_info server
-  raise RuntimeError, "Server named `#{server}' not found in .servers.yml" unless server_info
+  raise RuntimeError, "Server named `#{server}' not found in servers.yml" unless server_info
   send action, server, server_info
 
 rescue Exception => error
