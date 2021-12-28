@@ -12,7 +12,11 @@ require 'yaml'
 def sshpass command, server_info
   if server_info['password']
     ENV['SSHPASS'] = server_info['password']
-    command = "sshpass -e #{command}"
+    if command.start_with? "sshfs"
+      command += " -o ssh_command='sshpass -e ssh'"
+    else
+      command = "sshpass -e #{command}"
+    end
   end
   command
 end
@@ -64,11 +68,15 @@ def mount server, server_info
 end
 
 def umount server, server_info
-  command = "diskutil unmount force #{server_info['mountpoint']}"
-
-  system "mkdir -p #{server_info['mountpoint']}"
-  puts "Run command: #{command}"
-  system command
+  begin
+    command = "umount -f #{server_info['mountpoint']}"
+    puts "Run command: #{command}"
+    system command
+  rescue
+    command = "diskutil unmount force #{server_info['mountpoint']}"
+    puts "Run command: #{command}"
+    system command
+  end
 
   if `mount | grep -e "on #{File.absolute_path server_info['mountpoint']}"` == ''
     # remove the folder only if umount successfully
