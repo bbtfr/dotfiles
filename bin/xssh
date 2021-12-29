@@ -207,7 +207,7 @@ def show_message title, message
 end
 
 def load_server_info server
-  yaml_data = YAML.load_file(File.expand_path('servers.yml', DOTFILES_PATH))
+  yaml_data = YAML.load_file(File.expand_path('.servers.yml', DOTFILES_PATH))
   server_info = yaml_data[server]
   return server_info if server_info
   matcher = yaml_data.find do |name, info|
@@ -241,5 +241,7 @@ begin
 rescue Exception => error
   if action == 'local_runner'
     show_message error.class, error
+  else
+    puts error.class, error
   end
 end
