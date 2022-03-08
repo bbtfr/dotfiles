@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+
+import base64
+import os
+import shlex
+import subprocess
+from argparse import ArgumentParser
+from configparser import ConfigParser
+
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
+
+RCLONE_CONFIG_FILE = os.path.expanduser("~/.config/rclone/rclone.conf")
+RCLONE_AES_KEY = b"\x9c\x93\x5b\x48\x73\x0a\x55\x4d\x6b\xfd\x7c\x63\xc8\x86\xa9\x2b\xd3\x90\x19\x8e\xb8\x12\x8a\xfb\xf4\xde\x16\x2b\x8b\x95\xf6\x38"
+
+
+def load_rclone_config(server_name):
+    parser = ConfigParser()
+    parser.read(RCLONE_CONFIG_FILE)
+    return dict(parser[server_name])
+
+
+def decrypt_rclone_pass(password):
+    missing_padding = len(password) % 4
+    if missing_padding:
+        password += "=" * (4 - missing_padding)
+    password = base64.urlsafe_b64decode(password)
+    initial_value = int.from_bytes(password[: AES.block_size], byteorder="big")
+    cipher_text = password[AES.block_size :]
+    counter = Counter.new(128, initial_value=initial_value)
+    cipher = AES.new(RCLONE_AES_KEY, mode=AES.MODE_CTR, counter=counter)
+    password = cipher.decrypt(cipher_text)
+    return password.decode()
+
+
+def generate_ssh_uri(server_info):
+    assert server_info["type"] == "sftp", server_info
+    return "%s@%s" % (server_info["user"], server_info["host"])
+
+
+def generate_sshpass_command(commands, server_info):
+    if "pass" not in server_info:
+        return commands
+    os.environ["SSHPASS"] = decrypt_rclone_pass(server_info["pass"])
+    return ["sshpass", "-e"] + commands
+
+
+def set_iterm_badge(badge=""):
+    if badge:
+        badge = base64.b64encode(badge.encode()).decode()
+    subprocess.check_call('printf "\\e]1337;SetBadgeFormat=%s\\a"' % badge, shell=True)
+
+
+def connect(args):
+    server_name = args["server_name"]
+    server_info = load_rclone_config(server_name)
+
+    commands = ["ssh", "-CAXY", generate_ssh_uri(server_info)]
+    commands = generate_sshpass_command(commands, server_info)
+
+    set_iterm_badge(server_name)
+    print("Run Command:", shlex.join(commands))
+    subprocess.call(commands)
+    set_iterm_badge()
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    subparsers = parser.add_subparsers()
+
+    subparser = subparsers.add_parser("connect")
+    subparser.add_argument("server_name")
+    subparser.set_defaults(func=connect)
+
+    args = parser.parse_args()
+    args.func(vars(args))
