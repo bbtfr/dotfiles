@@ -4,20 +4,28 @@ import base64
 import os
 import shlex
 import subprocess
+import sys
 from argparse import ArgumentParser
 from configparser import ConfigParser
+from posixpath import ismount
 
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 
 RCLONE_CONFIG_FILE = os.path.expanduser("~/.config/rclone/rclone.conf")
+RCLONE_MOINTPOINT = os.path.expanduser("~/Mount")
 RCLONE_AES_KEY = b"\x9c\x93\x5b\x48\x73\x0a\x55\x4d\x6b\xfd\x7c\x63\xc8\x86\xa9\x2b\xd3\x90\x19\x8e\xb8\x12\x8a\xfb\xf4\xde\x16\x2b\x8b\x95\xf6\x38"
+LOCAL_RUNNER_PATH = (
+    "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+)
 
 
-def load_rclone_config(server_name):
+def load_rclone_config(server_name=None):
     parser = ConfigParser()
     parser.read(RCLONE_CONFIG_FILE)
-    return dict(parser[server_name])
+    if server_name is not None:
+        return dict(parser[server_name])
+    return parser
 
 
 def decrypt_rclone_pass(password):
@@ -31,11 +39,6 @@ def decrypt_rclone_pass(password):
     cipher = AES.new(RCLONE_AES_KEY, mode=AES.MODE_CTR, counter=counter)
     password = cipher.decrypt(cipher_text)
     return password.decode()
-
-
-def generate_ssh_uri(server_info):
-    assert server_info["type"] == "sftp", server_info
-    return "%s@%s" % (server_info["user"], server_info["host"])
 
 
 def generate_sshpass_command(commands, server_info):
@@ -55,13 +58,92 @@ def connect(args):
     server_name = args["server_name"]
     server_info = load_rclone_config(server_name)
 
-    commands = ["ssh", "-CAXY", generate_ssh_uri(server_info)]
+    assert server_info["type"] == "sftp", server_info
+    remote = "%s@%s" % (server_info["user"], server_info["host"])
+
+    commands = ["ssh", "-CAXY", remote]
     commands = generate_sshpass_command(commands, server_info)
 
     set_iterm_badge(server_name)
     print("Run Command:", shlex.join(commands))
-    subprocess.call(commands)
+    code = subprocess.call(commands)
     set_iterm_badge()
+    sys.exit(code)
+
+
+def _umount(mountpoint):
+    commands = ["umount", "-f", mountpoint]
+    print("Run Command:", shlex.join(commands))
+    subprocess.check_call(commands)
+
+
+def mount(args):
+    server_name = args["server_name"]
+    server_info = load_rclone_config(server_name)
+
+    remote = "%s:%s" % (server_name, server_info.get("mount", "/"))
+    mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
+
+    if not os.path.exists(mountpoint):
+        os.mkdir(mountpoint)
+
+    if os.path.ismount(mountpoint):
+        _umount(mountpoint)
+
+    commands = ["rclone", "mount", "--daemon", remote, mountpoint]
+    print("Run Command:", shlex.join(commands))
+    subprocess.check_call(commands)
+
+
+def umount(args):
+    server_name = args["server_name"]
+    mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
+    _umount(mountpoint)
+    os.unlink(mountpoint)
+
+
+def _set_host_info(hosts, name, host, info):
+    host = host.strip()
+    info = dict(info)
+    info["name"] = name
+
+    if host in hosts:
+        print("Warning: %r already registered, %s vs %s" % (host, hosts[host], info))
+        return
+    hosts[host] = info
+
+
+def load_rclone_hosts():
+    hosts = {}
+    for name, info in load_rclone_config().items():
+        if info.get("type", "") != "sftp":
+            continue
+        if "alias" not in info:
+            _set_host_info(hosts, name, info["host"], info)
+            continue
+        for host in info["alias"].split(","):
+            _set_host_info(hosts, name, host, info)
+    return hosts
+
+
+def local_runner(args):
+    hosts = load_rclone_hosts()
+
+    assert args["host"] in hosts, "%r not found in rclone config" % args["host"]
+
+    server_info = hosts[args["host"]]
+    server_name = server_info["name"]
+    remote = server_info.get("mount", "/")
+    mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
+    assert os.path.ismount(mountpoint), "%r not mounted" % server_name
+
+    command = args["command"]
+    path = os.path.join(mountpoint, os.path.relpath(args["path"], remote))
+
+    commands = [command, path]
+    os.environ["PATH"] = LOCAL_RUNNER_PATH
+    print("Run Command:", shlex.join(commands))
+    subprocess.check_call(commands)
 
 
 if __name__ == "__main__":
@@ -71,6 +153,20 @@ if __name__ == "__main__":
     subparser = subparsers.add_parser("connect")
     subparser.add_argument("server_name")
     subparser.set_defaults(func=connect)
+
+    subparser = subparsers.add_parser("mount")
+    subparser.add_argument("server_name")
+    subparser.set_defaults(func=mount)
+
+    subparser = subparsers.add_parser("umount")
+    subparser.add_argument("server_name")
+    subparser.set_defaults(func=umount)
+
+    subparser = subparsers.add_parser("local-runner")
+    subparser.add_argument("host")
+    subparser.add_argument("command")
+    subparser.add_argument("path")
+    subparser.set_defaults(func=local_runner)
 
     args = parser.parse_args()
     args.func(vars(args))
