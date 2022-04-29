@@ -7,7 +7,8 @@ import subprocess
 import sys
 from argparse import ArgumentParser
 from configparser import ConfigParser
-from posixpath import ismount
+
+import click
 
 RCLONE_CONFIG_FILE = os.path.expanduser("~/.config/rclone/rclone.conf")
 RCLONE_MOINTPOINT = os.path.expanduser("~/Mount")
@@ -15,6 +16,11 @@ RCLONE_AES_KEY = b"\x9c\x93\x5b\x48\x73\x0a\x55\x4d\x6b\xfd\x7c\x63\xc8\x86\xa9\
 LOCAL_RUNNER_PATH = (
     "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 )
+
+
+@click.group
+def cli():
+    pass
 
 
 def run_command(commands):
@@ -63,8 +69,9 @@ def set_iterm_badge(badge=""):
     subprocess.call('printf "\\e]1337;SetBadgeFormat=%s\\a"' % badge, shell=True)
 
 
-def connect(args):
-    server_name = args["server_name"]
+@cli.command
+@click.argument("server_name")
+def connect(server_name):
     server_info = load_rclone_config(server_name)
 
     assert server_info["type"] == "sftp", server_info
@@ -85,8 +92,9 @@ def do_umount(mountpoint):
     run_command(commands)
 
 
-def mount(args):
-    server_name = args["server_name"]
+@cli.command
+@click.argument("server_name")
+def mount(server_name):
     server_info = load_rclone_config(server_name)
 
     assert server_info["type"] == "sftp", server_info
@@ -110,8 +118,9 @@ def mount(args):
     run_command(commands)
 
 
-def umount(args):
-    server_name = args["server_name"]
+@cli.command
+@click.argument("server_name")
+def umount(server_name):
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
     do_umount(mountpoint)
     os.rmdir(mountpoint)
@@ -141,19 +150,22 @@ def load_rclone_hosts():
     return hosts
 
 
-def local_runner(args):
+@cli.command("local-runner")
+@click.argument("host")
+@click.argument("command")
+@click.argument("path")
+def local_runner(host, command, path):
     hosts = load_rclone_hosts()
 
-    assert args["host"] in hosts, "%r not found in rclone config" % args["host"]
+    assert host in hosts, "%r not found in rclone config" % host
 
-    server_info = hosts[args["host"]]
+    server_info = hosts[host]
     server_name = server_info["name"]
     remote = server_info.get("mount", "/")
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
     assert os.path.ismount(mountpoint), "%r not mounted" % server_name
 
-    command = args["command"]
-    path = os.path.join(mountpoint, os.path.relpath(args["path"], remote))
+    path = os.path.join(mountpoint, os.path.relpath(path, remote))
 
     commands = [command, path]
     os.environ["PATH"] = LOCAL_RUNNER_PATH
@@ -161,26 +173,4 @@ def local_runner(args):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
-    subparsers = parser.add_subparsers()
-
-    subparser = subparsers.add_parser("connect")
-    subparser.add_argument("server_name")
-    subparser.set_defaults(func=connect)
-
-    subparser = subparsers.add_parser("mount")
-    subparser.add_argument("server_name")
-    subparser.set_defaults(func=mount)
-
-    subparser = subparsers.add_parser("umount")
-    subparser.add_argument("server_name")
-    subparser.set_defaults(func=umount)
-
-    subparser = subparsers.add_parser("local-runner")
-    subparser.add_argument("host")
-    subparser.add_argument("command")
-    subparser.add_argument("path")
-    subparser.set_defaults(func=local_runner)
-
-    args = parser.parse_args()
-    args.func(vars(args))
+    cli()
