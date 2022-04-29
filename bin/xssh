@@ -53,7 +53,7 @@ def generate_sshpass_command(commands, server_info):
         return commands
     os.environ["SSHPASS"] = decrypt_rclone_pass(server_info["pass"])
     if commands[0] == "sshfs":
-        return commands + ["-o", "ssh_command='sshpass -e ssh'"]
+        return commands + ["-o", "ssh_command=sshpass -e ssh"]
     return ["sshpass", "-e"] + commands
 
 
@@ -114,7 +114,7 @@ def umount(args):
     server_name = args["server_name"]
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
     do_umount(mountpoint)
-    os.unlink(mountpoint)
+    os.rmdir(mountpoint)
 
 
 def _set_host_info(hosts, name, host, info):
