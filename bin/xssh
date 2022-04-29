@@ -9,15 +9,19 @@ from argparse import ArgumentParser
 from configparser import ConfigParser
 from posixpath import ismount
 
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
-
 RCLONE_CONFIG_FILE = os.path.expanduser("~/.config/rclone/rclone.conf")
 RCLONE_MOINTPOINT = os.path.expanduser("~/Mount")
 RCLONE_AES_KEY = b"\x9c\x93\x5b\x48\x73\x0a\x55\x4d\x6b\xfd\x7c\x63\xc8\x86\xa9\x2b\xd3\x90\x19\x8e\xb8\x12\x8a\xfb\xf4\xde\x16\x2b\x8b\x95\xf6\x38"
 LOCAL_RUNNER_PATH = (
     "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 )
+
+
+def run_command(commands):
+    print("Run Command:", shlex.join(commands))
+    code = subprocess.call(commands)
+    if code:
+        sys.exit(code)
 
 
 def load_rclone_config(server_name=None):
@@ -29,6 +33,9 @@ def load_rclone_config(server_name=None):
 
 
 def decrypt_rclone_pass(password):
+    from Crypto.Cipher import AES
+    from Crypto.Util import Counter
+
     missing_padding = len(password) % 4
     if missing_padding:
         password += "=" * (4 - missing_padding)
@@ -45,13 +52,15 @@ def generate_sshpass_command(commands, server_info):
     if "pass" not in server_info:
         return commands
     os.environ["SSHPASS"] = decrypt_rclone_pass(server_info["pass"])
+    if commands[0] == "sshfs":
+        return commands + ["-o", "ssh_command='sshpass -e ssh'"]
     return ["sshpass", "-e"] + commands
 
 
 def set_iterm_badge(badge=""):
     if badge:
         badge = base64.b64encode(badge.encode()).decode()
-    subprocess.check_call('printf "\\e]1337;SetBadgeFormat=%s\\a"' % badge, shell=True)
+    subprocess.call('printf "\\e]1337;SetBadgeFormat=%s\\a"' % badge, shell=True)
 
 
 def connect(args):
@@ -71,34 +80,40 @@ def connect(args):
     sys.exit(code)
 
 
-def _umount(mountpoint):
-    commands = ["umount", "-f", mountpoint]
-    print("Run Command:", shlex.join(commands))
-    subprocess.check_call(commands)
+def do_umount(mountpoint):
+    commands = ["diskutil", "umount", "force", mountpoint]
+    run_command(commands)
 
 
 def mount(args):
     server_name = args["server_name"]
     server_info = load_rclone_config(server_name)
 
-    remote = "%s:%s" % (server_name, server_info.get("mount", "/"))
+    assert server_info["type"] == "sftp", server_info
+    remote = "%s@%s:%s" % (
+        server_info["user"],
+        server_info["host"],
+        server_info.get("mount", "/"),
+    )
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
+    extra_options = ["-o", "auto_cache,reconnect,defer_permissions,noappledouble"]
 
     if not os.path.exists(mountpoint):
-        os.mkdir(mountpoint)
+        os.makedirs(mountpoint)
 
     if os.path.ismount(mountpoint):
-        _umount(mountpoint)
+        do_umount(mountpoint)
 
-    commands = ["rclone", "mount", "--daemon", remote, mountpoint]
-    print("Run Command:", shlex.join(commands))
-    subprocess.check_call(commands)
+    commands = ["sshfs", remote, mountpoint, *extra_options]
+    commands = generate_sshpass_command(commands, server_info)
+
+    run_command(commands)
 
 
 def umount(args):
     server_name = args["server_name"]
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
-    _umount(mountpoint)
+    do_umount(mountpoint)
     os.unlink(mountpoint)
 
 
@@ -142,8 +157,7 @@ def local_runner(args):
 
     commands = [command, path]
     os.environ["PATH"] = LOCAL_RUNNER_PATH
-    print("Run Command:", shlex.join(commands))
-    subprocess.check_call(commands)
+    run_command(commands)
 
 
 if __name__ == "__main__":
