@@ -1,18 +1,39 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser
+import os
+import shlex
+import subprocess
+import sys
+
+import click
 
 
-def show(args):
-    print(args)
+@click.group
+def cli():
+    pass
+
+
+def run_command(commands):
+    print("Run Command:", shlex.join(commands), file=sys.stderr)
+    code = subprocess.call(commands)
+    if code:
+        sys.exit(code)
+
+
+@cli.command
+@click.argument("name")
+def show(name):
+    commands = [
+        "security",
+        "find-generic-password",
+        "-w",
+        "-a",
+        os.getlogin(),
+        "-s",
+        name,
+    ]
+    run_command(commands)
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
-    subparsers = parser.add_subparsers()
-    subparser = subparsers.add_parser("show")
-    subparser.add_argument("name")
-    subparser.set_defaults(func=show)
-
-    args = parser.parse_args()
-    args.func(vars(args))
+    cli()

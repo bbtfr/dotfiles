@@ -24,7 +24,7 @@ def cli():
 
 
 def run_command(commands):
-    print("Run Command:", shlex.join(commands))
+    print("Run Command:", shlex.join(commands), file=sys.stderr)
     code = subprocess.call(commands)
     if code:
         sys.exit(code)
