@@ -23,11 +23,12 @@ def cli():
     pass
 
 
-def run_command(commands):
+def run_command(commands, check = True, **kwargs):
     print("Run Command:", shlex.join(commands), file=sys.stderr)
-    code = subprocess.call(commands)
-    if code:
-        sys.exit(code)
+    proc = subprocess.run(commands, **kwargs)
+    if check and proc.returncode:
+        sys.exit(proc.returncode)
+    return proc
 
 
 def load_rclone_config(server_name=None):
@@ -81,10 +82,9 @@ def connect(server_name):
     commands = generate_sshpass_command(commands, server_info)
 
     set_iterm_badge(server_name)
-    print("Run Command:", shlex.join(commands))
-    code = subprocess.call(commands)
+    proc = run_command(commands, check=False)
     set_iterm_badge()
-    sys.exit(code)
+    sys.exit(proc.returncode)
 
 
 def do_umount(mountpoint):
