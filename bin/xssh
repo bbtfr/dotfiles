@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 import base64
 import os
@@ -94,7 +94,7 @@ def do_umount(mountpoint):
 
 @cli.command
 @click.argument("server_name")
-def mount(server_name):
+def remount(server_name):
     server_info = load_rclone_config(server_name)
 
     assert server_info["type"] == "sftp", server_info
