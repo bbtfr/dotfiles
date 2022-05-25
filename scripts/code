@@ -1,0 +1,2 @@
+#!/bin/bash -e
+echo LOCAL RUNNER: $(hostname -f) code $(realpath $1)

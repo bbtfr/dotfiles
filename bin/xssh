@@ -23,9 +23,9 @@ def cli():
     pass
 
 
-def run_command(commands, check = True, **kwargs):
-    print("Run Command:", shlex.join(commands), file=sys.stderr)
-    proc = subprocess.run(commands, **kwargs)
+def run_command(commands, check=True, shell=False, **kwargs):
+    print("Run Command:", commands if shell else shlex.join(commands), file=sys.stderr)
+    proc = subprocess.run(commands, shell=shell, **kwargs)
     if check and proc.returncode:
         sys.exit(proc.returncode)
     return proc
@@ -124,6 +124,23 @@ def umount(server_name):
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
     do_umount(mountpoint)
     os.rmdir(mountpoint)
+
+
+@cli.command
+@click.argument("server_name")
+def setup(server_name):
+    server_info = load_rclone_config(server_name)
+
+    assert server_info["type"] == "sftp", server_info
+    remote = "%s@%s" % (server_info["user"], server_info["host"])
+
+    setup_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts", "setup.sh")
+    commands = ["ssh", "-CAXY", remote, "bash -sx"]
+    commands = generate_sshpass_command(commands, server_info)
+    commands = shlex.join(commands)
+    commands += " < %s" % setup_file
+
+    run_command(commands, shell=True)
 
 
 def _set_host_info(hosts, name, host, info):
