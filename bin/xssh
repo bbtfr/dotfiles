@@ -134,7 +134,9 @@ def setup(server_name):
     assert server_info["type"] == "sftp", server_info
     remote = "%s@%s" % (server_info["user"], server_info["host"])
 
-    setup_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts", "setup.sh")
+    setup_file = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "scripts", "setup.sh"
+    )
     commands = ["ssh", "-CAXY", remote, "bash -sx"]
     commands = generate_sshpass_command(commands, server_info)
     commands = shlex.join(commands)
