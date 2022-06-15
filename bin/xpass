@@ -20,7 +20,8 @@ def cli():
 def run_command(commands, **kwargs):
     proc = subprocess.run(commands, **kwargs)
     if proc.returncode:
-        sys.stderr.buffer.write(proc.stderr)
+        if proc.stderr is not None:
+            sys.stderr.buffer.write(proc.stderr)
         sys.exit(proc.returncode)
     return proc
 

@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+
+import os
+import shlex
+import subprocess
+import sys
+from configparser import ConfigParser
+
+import click
+
+ANYCONNECT_CONFIG_FILE = os.path.expanduser("~/.config/anyconnect/anyconnect.conf")
+ANYCONNECT_APPLICATIONNAME = "Cisco AnyConnect Secure Mobility Client"
+
+
+@click.group
+def cli():
+    pass
+
+
+def run_command(commands, shell=False, **kwargs):
+    print("Run Command:", commands if shell else shlex.join(commands), file=sys.stderr)
+    proc = subprocess.run(commands, shell=shell, **kwargs)
+    if proc.returncode:
+        if proc.stderr is not None:
+            sys.stderr.buffer.write(proc.stderr)
+        sys.exit(proc.returncode)
+    return proc
+
+
+def run_osascript(script):
+    return run_command(["osascript", "-e", script])
+
+
+def load_anyconnect_config(server_name=None):
+    parser = ConfigParser()
+    parser.read(ANYCONNECT_CONFIG_FILE)
+    if server_name is not None:
+        return dict(parser[server_name])
+    return parser
+
+
+@cli.command
+@click.argument("server_name")
+def connect(server_name):
+    run_osascript('quit app "%s"' % ANYCONNECT_APPLICATIONNAME)
+    server_info = load_anyconnect_config(server_name)
+    run_command(
+        'echo "%s\n%s\n%s\n" | /opt/cisco/anyconnect/bin/vpn -s connect %s'
+        % (
+            server_info["group"],
+            server_info["user"],
+            server_info["pass"],
+            server_info["host"],
+        ),
+        shell=True,
+    )
+    run_osascript('open app "%s"' % ANYCONNECT_APPLICATIONNAME)
+
+
+if __name__ == "__main__":
+    cli()
