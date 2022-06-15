@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+import sys
+import time
+
+import click
+from tabulate import tabulate
+
+DESC = "xpass password"
+LOGIN = os.getlogin()
+
+
+@click.group
+def cli():
+    pass
+
+
+def run_command(commands, check=True, **kwargs):
+    proc = subprocess.run(commands, **kwargs)
+    if check and proc.returncode:
+        sys.stderr.buffer.write(proc.stderr)
+        sys.exit(proc.returncode)
+    return proc
+
+
+@cli.command
+@click.argument("name")
+def show(name):
+    commands = [
+        "security",
+        "find-generic-password",
+        "-a",
+        LOGIN,
+        "-D",
+        DESC,
+        "-s",
+        name,
+        "-w",
+    ]
+    run_command(commands)
+
+
+@cli.command
+@click.argument("name")
+@click.option("-p", "--password", prompt=True, hide_input=True)
+def insert(name, password):
+    commands = [
+        "security",
+        "add-generic-password",
+        "-T",
+        "",
+        "-a",
+        LOGIN,
+        "-D",
+        DESC,
+        "-s",
+        name,
+        "-w",
+        password,
+    ]
+    run_command(commands)
+
+
+def format_security_output(proc):
+    keychains = []
+    for line in proc.stdout.decode().splitlines():
+        if not line.startswith(" "):
+            if line.startswith("keychain:"):
+                keychains.append({})
+            if line.startswith("attributes:"):
+                keychains[-1]["attributes"] = {}
+                continue
+            parts = line.split(": ")
+            keychains[-1][parts[0]] = parts[1]
+        else:
+            line = line.lstrip()
+            parts = line.split("=")
+            keychains[-1]["attributes"][parts[0]] = parts[1]
+
+    def _parse_blob(content):
+        return content[1:-1]
+
+    def _parse_timedate(content):
+        content = content.split("  ")[-1][1:-6]
+        timedate = time.strptime(content, "%Y%m%d%H%M%S")
+        return time.strftime("%Y-%m-%d %H:%M:%S", timedate)
+
+    data = []
+    for keychain in keychains:
+        account = keychain.get("attributes", {}).get('"acct"<blob>', "")
+        if _parse_blob(account) != LOGIN:
+            continue
+        if _parse_blob(keychain["attributes"]['"desc"<blob>']) != DESC:
+            continue
+        name = _parse_blob(keychain["attributes"]['"svce"<blob>'])
+        mtime = _parse_timedate(keychain["attributes"]['"mdat"<timedate>'])
+        data.append([name, mtime])
+
+    print(tabulate(data, headers=["Name", "Date Modified"]))
+
+
+@cli.command
+def list():
+    commands = [
+        "security",
+        "dump-keychain",
+    ]
+    proc = run_command(commands, capture_output=True)
+    format_security_output(proc)
+
+
+@cli.command
+@click.argument("name")
+def find(name):
+    commands = [
+        "security",
+        "find-generic-password",
+        "-a",
+        LOGIN,
+        "-D",
+        DESC,
+        "-s",
+        name,
+    ]
+    proc = run_command(commands, capture_output=True)
+    format_security_output(proc)
+
+
+@cli.command
+@click.argument("name")
+def remove(name):
+    commands = [
+        "security",
+        "delete-generic-password",
+        "-a",
+        LOGIN,
+        "-D",
+        DESC,
+        "-s",
+        name,
+    ]
+    proc = run_command(commands, capture_output=True)
+    format_security_output(proc)
+    sys.stderr.buffer.write(proc.stderr)
+
+
+if __name__ == "__main__":
+    cli()
