@@ -5,7 +5,6 @@ import os
 import shlex
 import subprocess
 import sys
-from argparse import ArgumentParser
 from configparser import ConfigParser
 
 import click
@@ -23,7 +22,7 @@ def cli():
     pass
 
 
-def run_command(commands, check = True, **kwargs):
+def run_command(commands, check=True, **kwargs):
     print("Run Command:", shlex.join(commands), file=sys.stderr)
     proc = subprocess.run(commands, **kwargs)
     if check and proc.returncode:
