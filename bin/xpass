@@ -17,9 +17,9 @@ def cli():
     pass
 
 
-def run_command(commands, check=True, **kwargs):
+def run_command(commands, **kwargs):
     proc = subprocess.run(commands, **kwargs)
-    if check and proc.returncode:
+    if proc.returncode:
         sys.stderr.buffer.write(proc.stderr)
         sys.exit(proc.returncode)
     return proc
