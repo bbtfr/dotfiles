@@ -17,18 +17,25 @@ def cli():
     pass
 
 
-def run_command(commands, shell=False, **kwargs):
+def run_command(commands, check=True, shell=False, **kwargs):
     print("Run Command:", commands if shell else shlex.join(commands), file=sys.stderr)
     proc = subprocess.run(commands, shell=shell, **kwargs)
-    if proc.returncode:
+    if check and proc.returncode:
         if proc.stderr is not None:
             sys.stderr.buffer.write(proc.stderr)
         sys.exit(proc.returncode)
     return proc
 
 
-def run_osascript(script):
-    return run_command(["osascript", "-e", script])
+def run_osascript(script, ignore_errors=[]):
+    proc = run_command(["osascript", "-e", script], check=False, capture_output=True)
+    if not proc.returncode:
+        return proc
+    for error in ignore_errors:
+        if error.encode() in proc.stderr:
+            return proc
+    sys.stderr.buffer.write(proc.stderr)
+    sys.exit(proc.returncode)
 
 
 def load_anyconnect_config(server_name=None):
@@ -42,7 +49,11 @@ def load_anyconnect_config(server_name=None):
 @cli.command
 @click.argument("server_name")
 def connect(server_name):
-    run_osascript('quit app "%s"' % ANYCONNECT_APPLICATIONNAME)
+    proc = run_osascript(
+        'quit app "%s"' % ANYCONNECT_APPLICATIONNAME,
+        ignore_errors=["User canceled. (-128)"],
+    )
+
     server_info = load_anyconnect_config(server_name)
     run_command(
         'echo "%s\n%s\n%s\n" | /opt/cisco/anyconnect/bin/vpn -s connect %s'
@@ -54,7 +65,10 @@ def connect(server_name):
         ),
         shell=True,
     )
-    run_osascript('open app "%s"' % ANYCONNECT_APPLICATIONNAME)
+    proc = run_osascript(
+        'open app "%s"' % ANYCONNECT_APPLICATIONNAME,
+        ignore_errors=["Can’t continue open. (-1708)"],
+    )
 
 
 if __name__ == "__main__":
