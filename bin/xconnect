@@ -49,7 +49,7 @@ def load_anyconnect_config(server_name=None):
 @cli.command
 @click.argument("server_name")
 def connect(server_name):
-    proc = run_osascript(
+    run_osascript(
         'quit app "%s"' % ANYCONNECT_APPLICATIONNAME,
         ignore_errors=["User canceled. (-128)"],
     )
@@ -65,7 +65,7 @@ def connect(server_name):
         ),
         shell=True,
     )
-    proc = run_osascript(
+    run_osascript(
         'open app "%s"' % ANYCONNECT_APPLICATIONNAME,
         ignore_errors=["Can’t continue open. (-1708)"],
     )
