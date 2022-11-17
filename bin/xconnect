@@ -20,11 +20,11 @@ def cli():
 def run_command(commands, check=True, shell=False, **kwargs):
     print("Run Command:", commands if shell else shlex.join(commands), file=sys.stderr)
     proc = subprocess.run(commands, shell=shell, **kwargs)
-    if check and proc.returncode:
-        if proc.stderr is not None:
-            sys.stderr.buffer.write(proc.stderr)
-        sys.exit(proc.returncode)
-    return proc
+    if not check or not proc.returncode:
+        return proc
+    if proc.stderr is not None:
+        sys.stderr.buffer.write(proc.stderr)
+    sys.exit(proc.returncode)
 
 
 def run_osascript(script, ignore_errors=[]):
