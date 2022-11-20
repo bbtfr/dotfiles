@@ -52,6 +52,7 @@ def connect(server_name):
     run_command(
         'pkill -x "%s"' % ANYCONNECT_APPLICATIONNAME,
         shell=True,
+        check=False,
     )
 
     server_info = load_anyconnect_config(server_name)
