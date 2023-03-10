@@ -39,6 +39,7 @@ def load_rclone_config(server_name=None):
 
 
 def decrypt_rclone_pass(password):
+    # https://github.com/rclone/rclone/blob/master/fs/config/obscure/obscure.go#L71
     from Crypto.Cipher import AES
     from Crypto.Util import Counter
 
@@ -52,6 +53,21 @@ def decrypt_rclone_pass(password):
     cipher = AES.new(RCLONE_AES_KEY, mode=AES.MODE_CTR, counter=counter)
     password = cipher.decrypt(cipher_text)
     return password.decode()
+
+
+def encrypt_rclone_pass(password):
+    # https://github.com/rclone/rclone/blob/master/fs/config/obscure/obscure.go#L48
+    from Crypto import Random
+    from Crypto.Cipher import AES
+    from Crypto.Util import Counter
+
+    initial_value = Random.new().read(AES.block_size)
+    initial_value = int.from_bytes(initial_value, byteorder="big")
+    counter = Counter.new(128, initial_value=initial_value)
+    cipher = AES.new(RCLONE_AES_KEY, mode=AES.MODE_CTR, counter=counter)
+    cipher_text = cipher.decrypt(password.encode())
+    password = initial_value.to_bytes(AES.block_size, byteorder="big") + cipher_text
+    return base64.urlsafe_b64encode(password).rstrip(b"=")
 
 
 def generate_sshpass_command(commands, server_info):
@@ -68,6 +84,13 @@ def set_iterm_badge(badge=""):
         badge = base64.b64encode(badge.encode()).decode()
     subprocess.call('printf "\\e]1337;SetBadgeFormat=%s\\a"' % badge, shell=True)
 
+
+@cli.command(name="pass")
+@click.argument("password")
+@click.option("-d", "--decrypt", is_flag=True, help="decrypt password")
+def password(password, decrypt):
+    func = decrypt_rclone_pass if decrypt else encrypt_rclone_pass
+    click.echo(func(password))
 
 @cli.command
 @click.argument("server_name")
