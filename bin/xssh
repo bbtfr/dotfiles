@@ -92,6 +92,7 @@ def password(password, decrypt):
     func = decrypt_rclone_pass if decrypt else encrypt_rclone_pass
     click.echo(func(password))
 
+
 @cli.command
 @click.argument("server_name")
 def connect(server_name):
