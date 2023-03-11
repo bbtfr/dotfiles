@@ -110,7 +110,19 @@ def connect(server_name):
     sys.exit(proc.returncode)
 
 
-def do_umount(mountpoint):
+def mount_volume(mountpoint, server_info):
+    remote = "%s@%s:%s" % (
+        server_info["user"],
+        server_info["host"],
+        server_info.get("mount", "/"),
+    )
+    extra_options = ["-o", "auto_cache,reconnect,defer_permissions,noappledouble"]
+    commands = ["sshfs", remote, mountpoint, *extra_options]
+    commands = generate_sshpass_command(commands, server_info)
+    run_command(commands)
+
+
+def umount_volume(mountpoint):
     commands = ["diskutil", "umount", "force", mountpoint]
     run_command(commands)
 
@@ -121,31 +133,22 @@ def remount(server_name):
     server_info = load_rclone_config(server_name)
 
     assert server_info["type"] == "sftp", server_info
-    remote = "%s@%s:%s" % (
-        server_info["user"],
-        server_info["host"],
-        server_info.get("mount", "/"),
-    )
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
-    extra_options = ["-o", "auto_cache,reconnect,defer_permissions,noappledouble"]
 
     if not os.path.exists(mountpoint):
         os.makedirs(mountpoint)
 
     if os.path.ismount(mountpoint):
-        do_umount(mountpoint)
+        umount_volume(mountpoint)
 
-    commands = ["sshfs", remote, mountpoint, *extra_options]
-    commands = generate_sshpass_command(commands, server_info)
-
-    run_command(commands)
+    mount_volume(mountpoint, server_info)
 
 
 @cli.command
 @click.argument("server_name")
 def umount(server_name):
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
-    do_umount(mountpoint)
+    umount_volume(mountpoint)
     os.rmdir(mountpoint)
 
 
@@ -201,16 +204,18 @@ def local_runner(host, command, path):
 
     assert host in hosts, "%r not found in rclone config" % host
 
+    os.environ["PATH"] = LOCAL_RUNNER_PATH
+
     server_info = hosts[host]
     server_name = server_info["name"]
     remote = server_info.get("mount", "/")
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
-    assert os.path.ismount(mountpoint), "%r not mounted" % server_name
 
-    path = os.path.join(mountpoint, os.path.relpath(path, remote))
+    if not os.path.ismount(mountpoint):
+        mount_volume(mountpoint, server_info)
 
-    commands = [command, path]
-    os.environ["PATH"] = LOCAL_RUNNER_PATH
+    localpath = os.path.join(mountpoint, os.path.relpath(path, remote))
+    commands = [command, localpath]
     run_command(commands)
 
 
