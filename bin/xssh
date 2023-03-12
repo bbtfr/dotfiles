@@ -214,6 +214,12 @@ def local_runner(host, command, path):
     if not os.path.ismount(mountpoint):
         mount_volume(mountpoint, server_info)
 
+    try:
+        os.listdir(mountpoint)
+    except IOError:
+        umount_volume(mountpoint)
+        mount_volume(mountpoint, server_info)
+
     localpath = os.path.join(mountpoint, os.path.relpath(path, remote))
     commands = [command, localpath]
     run_command(commands)
