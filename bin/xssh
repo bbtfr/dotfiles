@@ -101,7 +101,11 @@ def connect(server_name):
     assert server_info["type"] == "sftp", server_info
     remote = "%s@%s" % (server_info["user"], server_info["host"])
 
-    commands = ["ssh", "-CAXY", remote]
+    extra_options = []
+    if "port" in server_info:
+        extra_options.extend(["-p", str(server_info["port"])])
+
+    commands = ["ssh", "-CAXY", remote, *extra_options]
     commands = generate_sshpass_command(commands, server_info)
 
     set_iterm_badge(server_name)
@@ -116,7 +120,12 @@ def mount_volume(mountpoint, server_info):
         server_info["host"],
         server_info.get("mount", "/"),
     )
-    extra_options = ["-o", "auto_cache,reconnect,defer_permissions,noappledouble"]
+
+    extra_options = []
+    if "port" in server_info:
+        extra_options.extend(["-p", str(server_info["port"])])
+
+    extra_options.extend(["-o", "auto_cache,reconnect,defer_permissions,noappledouble"])
     commands = ["sshfs", remote, mountpoint, *extra_options]
     commands = generate_sshpass_command(commands, server_info)
     run_command(commands)
