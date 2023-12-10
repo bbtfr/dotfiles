@@ -8,8 +8,10 @@ from configparser import ConfigParser
 
 import click
 
-ANYCONNECT_CONFIG_FILE = os.path.expanduser("~/.config/anyconnect/anyconnect.conf")
-ANYCONNECT_APPLICATIONNAME = "Cisco AnyConnect Secure Mobility Client"
+ANYCONNECT_CONF_PATH = os.path.expanduser("~/.config/anyconnect/anyconnect.conf")
+ANYCONNECT_APP_NAME = "Cisco AnyConnect Secure Mobility Client"
+ANYCONNECT_APP_PATH = "/Applications/Cisco/%s.app" % ANYCONNECT_APP_NAME
+ANYCONNECT_CLI_PATH = "/opt/cisco/anyconnect/bin/vpn"
 
 
 @click.group
@@ -17,30 +19,22 @@ def cli():
     pass
 
 
-def run_command(commands, check=True, shell=False, **kwargs):
+def run_command(commands, check=True, shell=True, ignore_errors=[], **kwargs):
     print("Run Command:", commands if shell else shlex.join(commands), file=sys.stderr)
     proc = subprocess.run(commands, shell=shell, **kwargs)
     if not check or not proc.returncode:
         return proc
     if proc.stderr is not None:
+        for error in ignore_errors:
+            if error.encode() in proc.stderr:
+                return proc
         sys.stderr.buffer.write(proc.stderr)
-    sys.exit(proc.returncode)
-
-
-def run_osascript(script, ignore_errors=[]):
-    proc = run_command(["osascript", "-e", script], check=False, capture_output=True)
-    if not proc.returncode:
-        return proc
-    for error in ignore_errors:
-        if error.encode() in proc.stderr:
-            return proc
-    sys.stderr.buffer.write(proc.stderr)
     sys.exit(proc.returncode)
 
 
 def load_anyconnect_config(server_name=None):
     parser = ConfigParser()
-    parser.read(ANYCONNECT_CONFIG_FILE)
+    parser.read(ANYCONNECT_CONF_PATH)
     if server_name is not None:
         return dict(parser[server_name])
     return parser
@@ -50,24 +44,23 @@ def load_anyconnect_config(server_name=None):
 @click.argument("server_name")
 def connect(server_name):
     run_command(
-        'pkill -x "%s"' % ANYCONNECT_APPLICATIONNAME,
-        shell=True,
+        'pkill -x "%s"' % ANYCONNECT_APP_NAME,
         check=False,
     )
 
     server_info = load_anyconnect_config(server_name)
     run_command(
-        'echo "%s\n%s\n%s\n" | /opt/cisco/anyconnect/bin/vpn -s connect %s'
+        'echo "%s\n%s\n%s\n" | %s -s connect %s'
         % (
             server_info["group"],
             server_info["user"],
             server_info["pass"],
+            ANYCONNECT_CLI_PATH,
             server_info["host"],
         ),
-        shell=True,
     )
-    run_osascript(
-        'open app "%s"' % ANYCONNECT_APPLICATIONNAME,
+    run_command(
+        'open "%s"' % ANYCONNECT_APP_PATH,
         ignore_errors=["Can’t continue open. (-1708)"],
     )
 
