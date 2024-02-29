@@ -4,8 +4,9 @@ import os
 import shlex
 import subprocess
 import sys
-from argparse import ArgumentParser
 from configparser import ConfigParser
+
+import click
 
 ANYCONNECT_CONF_PATH = os.path.expanduser("~/.config/anyconnect/anyconnect.conf")
 ANYCONNECT_APP_NAME = "Cisco AnyConnect Secure Mobility Client"
@@ -13,6 +14,7 @@ ANYCONNECT_APP_PATH = "/Applications/Cisco/%s.app" % ANYCONNECT_APP_NAME
 ANYCONNECT_CLI_PATH = "/opt/cisco/anyconnect/bin/vpn"
 
 
+@click.group
 def cli():
     pass
 
@@ -38,6 +40,8 @@ def load_anyconnect_config(server_name=None):
     return parser
 
 
+@cli.command
+@click.argument("server_name")
 def connect(server_name):
     run_command(
         'pkill -x "%s"' % ANYCONNECT_APP_NAME,
@@ -62,19 +66,4 @@ def connect(server_name):
 
 
 if __name__ == "__main__":
-    # create the top-level parser
-    parser = ArgumentParser(prog="xcisco")
-    subparsers = parser.add_subparsers()
-
-    # create the parser for the "connect" command
-    parser_connect = subparsers.add_parser("connect", help="Connect to MegVPN server")
-    parser_connect.add_argument("server_name", help="Server name")
-    parser_connect.set_defaults(func=connect)
-
-    args = parser.parse_args()
-    kwargs = dict(args._get_kwargs())
-    if "func" in kwargs:
-        func = kwargs.pop("func")
-        func(**kwargs)
-    else:
-        parser.print_help()
+    cli()
