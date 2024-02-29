@@ -211,15 +211,24 @@ def load_rclone_hosts():
 def local_runner(host, command, path):
     hosts = load_rclone_hosts()
 
-    assert host in hosts, "%r not found in rclone config" % host
+    assert host in hosts, "%r not found in rclone config, available hosts: %r" % (
+        host,
+        set(hosts.keys()),
+    )
 
     os.environ["PATH"] = LOCAL_RUNNER_PATH
 
     server_info = hosts[host]
     server_name = server_info["name"]
+
+    # open code with remote name / path
+    if command == "code":
+        commands = ["code", "--remote", "ssh-remote+%s" % server_name, path]
+        run_command(commands)
+        return
+
     remote = server_info.get("mount", "/")
     mountpoint = os.path.join(RCLONE_MOINTPOINT, server_name)
-
     if not os.path.ismount(mountpoint):
         mount_volume(mountpoint, server_info)
 
