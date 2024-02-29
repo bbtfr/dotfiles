@@ -8,6 +8,7 @@ import sys
 from configparser import ConfigParser
 
 import click
+from tabulate import tabulate
 
 RCLONE_CONFIG_FILE = os.path.expanduser("~/.config/rclone/rclone.conf")
 RCLONE_MOINTPOINT = os.path.expanduser("~/Mount")
@@ -15,6 +16,24 @@ RCLONE_AES_KEY = b"\x9c\x93\x5b\x48\x73\x0a\x55\x4d\x6b\xfd\x7c\x63\xc8\x86\xa9\
 LOCAL_RUNNER_PATH = (
     "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 )
+
+AWS_CONFIG_PATH = os.path.expanduser("~/.aws/config")
+AWS_CONFIG_TEMPLATE = """[default]
+aws_access_key_id = %s
+aws_secret_access_key = %s
+
+s3 =
+    endpoint_url = %s
+"""
+
+SSH_CONFIG_PATH = os.path.expanduser("~/.ssh/config")
+SSH_CONFIG_CHECKER = "Host %s\n"
+SSH_CONFIG_TEMPLATE = """Host %s
+    User %s
+    HostName %s
+    Compression yes
+    ForwardAgent yes
+"""
 
 
 @click.group
@@ -85,7 +104,7 @@ def set_iterm_badge(badge=""):
     subprocess.call('printf "\\e]1337;SetBadgeFormat=%s\\a"' % badge, shell=True)
 
 
-@cli.command(name="pass")
+@cli.command("pass")
 @click.argument("password")
 @click.option("-d", "--decrypt", is_flag=True, help="decrypt password")
 def password(password, decrypt):
@@ -241,6 +260,64 @@ def local_runner(host, command, path):
     localpath = os.path.join(mountpoint, os.path.relpath(path, remote))
     commands = [command, localpath]
     run_command(commands)
+
+
+@cli.command("list")
+def table():
+    data = [[info["name"], info["type"]] for _, info in load_rclone_hosts().items()]
+    print(tabulate(data, headers=["Name", "Type"]))
+
+
+@cli.group
+def dump():
+    pass
+
+
+@dump.command("aws")
+@click.argument("server_name")
+def dump_aws(server_name):
+    server_info = load_rclone_config(server_name)
+    assert server_info["type"] == "s3", server_info
+
+    with open(AWS_CONFIG_PATH, "w") as fp:
+        content = AWS_CONFIG_TEMPLATE % (
+            server_info["access_key_id"],
+            server_info["secret_access_key"],
+            server_info["endpoint"],
+        )
+        fp.write(content)
+        print(content)
+
+
+def _dump_ssh_config(server_name, server_info):
+    assert server_info["type"] == "sftp", server_info
+
+    with open(SSH_CONFIG_PATH, "r") as fp:
+        content = fp.read()
+        assert SSH_CONFIG_CHECKER % server_name not in content, (
+            "%r already registered" % server_name
+        )
+
+    with open(SSH_CONFIG_PATH, "a") as fp:
+        content = SSH_CONFIG_TEMPLATE % (
+            server_name,
+            server_info["user"],
+            server_info["host"],
+        )
+        fp.write(content)
+        print(content)
+
+
+@dump.command("ssh")
+@click.argument("server_name", required=False)
+def dump_ssh(server_name):
+    if server_name is not None:
+        server_info = load_rclone_config(server_name)
+        _dump_ssh_config(server_name, server_info)
+        return
+
+    for server_name, server_info in load_rclone_config().items():
+        _dump_ssh_config(server_name, server_info)
 
 
 if __name__ == "__main__":
